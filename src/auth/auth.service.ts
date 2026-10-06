@@ -11,6 +11,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: usuario.usuarioId,
       unidadNegocioId: usuario.unidadNegocioId,
+      rol: usuario.rol,
     };
     return this.jwtService.signAsync(payload);
   }

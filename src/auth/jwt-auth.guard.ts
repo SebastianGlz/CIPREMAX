@@ -33,12 +33,14 @@ export class JwtAuthGuard implements CanActivate {
     } catch {
       throw new UnauthorizedException();
     }
-    // Un token sin unidad de negocio no sirve: todo se filtra por ella.
+    // Un token sin unidad de negocio o sin rol no sirve: todo se filtra y
+    // se autoriza con ellos.
     if (!esJwtPayload(payload)) throw new UnauthorizedException();
 
     request.user = {
       usuarioId: payload.sub,
       unidadNegocioId: payload.unidadNegocioId,
+      rol: payload.rol,
     };
     return true;
   }

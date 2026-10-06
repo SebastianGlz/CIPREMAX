@@ -2,9 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
+import { minutes, ThrottlerModule } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { PasswordService } from './password.service';
+import { RolesGuard } from './roles.guard';
 
 @Module({
   imports: [
@@ -22,13 +25,19 @@ import { JwtAuthGuard } from './jwt-auth.guard';
         verifyOptions: { algorithms: ['HS256'] },
       }),
     }),
+    // No hay límite global: solo aplica en rutas con @LimiteDeLogin(), que
+    // sobrescribe estos valores.
+    ThrottlerModule.forRoot([{ ttl: minutes(1), limit: 100 }]),
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
-    // Guard global: toda ruta exige JWT salvo las marcadas con @Public().
+    PasswordService,
+    // Guards globales, en este orden: toda ruta exige JWT salvo las marcadas
+    // con @Public(), y luego se comprueban los roles de @Roles().
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [AuthService],
+  exports: [AuthService, PasswordService],
 })
 export class AuthModule {}

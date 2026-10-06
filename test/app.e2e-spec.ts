@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { configurarApp } from './../src/app.setup';
 import { AuthService } from './../src/auth/auth.service';
+import { Rol } from './../src/auth/rol';
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -40,7 +41,11 @@ describe('App (e2e)', () => {
   });
 
   it('/api/auth/me (GET) devuelve el usuario del token', async () => {
-    const usuario = { usuarioId: 'u1', unidadNegocioId: 'n1' };
+    const usuario = {
+      usuarioId: 'u1',
+      unidadNegocioId: 'n1',
+      rol: Rol.AGENTE,
+    };
     const token = await app.get(AuthService).emitirToken(usuario);
 
     return request(app.getHttpServer())

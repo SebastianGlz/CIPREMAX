@@ -21,7 +21,10 @@
 
 ## Autenticación (`src/auth`)
 * `JwtAuthGuard` es global: toda ruta exige `Authorization: Bearer <jwt>` salvo las marcadas con `@Public()`.
-* Payload del JWT: `{ sub, unidadNegocioId }`. El guard deja `{ usuarioId, unidadNegocioId }` en `request.user`; se lee con `@UsuarioActual()`.
+* Payload del JWT: `{ sub, unidadNegocioId, rol }`. El guard deja `{ usuarioId, unidadNegocioId, rol }` en `request.user`; se lee con `@UsuarioActual()`. Un token sin unidad o sin rol válido se rechaza con 401.
+* Roles: `@Roles(Rol.ADMIN)` restringe una ruta o controlador (403 si no coincide); sin decorador basta con estar autenticado. Los valores de `Rol` (`src/auth/rol.ts`) son provisionales (`ADMIN`, `AGENTE`) y deben coincidir con el schema de Dev 2.
+* Contraseñas: `PasswordService.hashear()` / `verificar()` (argon2id). Nunca guardar ni comparar contraseñas de otra forma.
+* `@LimiteDeLogin()`: 10 intentos por minuto por IP (429 al excederlo), para login y rutas de credenciales. No hay límite global. Cuenta en memoria y por IP: detrás de un proxy hay que configurar `trust proxy`.
 * `AuthService.emitirToken()` firma el token. Falta el endpoint de login, que depende de la tabla de usuarios (Dev 2).
 * Variables: `JWT_SECRET` (obligatoria) y `JWT_EXPIRES_IN` (por defecto `1h`). Ver `.env.example`.
 

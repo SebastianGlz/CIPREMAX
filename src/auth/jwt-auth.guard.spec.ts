@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Public } from './public.decorator';
+import { Rol } from './rol';
 import { RequestAutenticado } from './usuario-autenticado';
 
 class ControladorDePrueba {
@@ -11,6 +12,8 @@ class ControladorDePrueba {
   @Public()
   publica() {}
 }
+
+const PAYLOAD = { sub: 'u1', unidadNegocioId: 'n1', rol: Rol.AGENTE };
 
 describe('JwtAuthGuard', () => {
   const jwtService = new JwtService({ secret: 'secreto-de-prueba' });
@@ -29,6 +32,12 @@ describe('JwtAuthGuard', () => {
     return { context, request };
   }
 
+  async function esperarRechazo(authorization?: string) {
+    await expect(
+      guard.canActivate(contexto(authorization).context),
+    ).rejects.toThrow(UnauthorizedException);
+  }
+
   it('deja pasar rutas @Public() sin token', async () => {
     const { context, request } = contexto(
       undefined,
@@ -39,56 +48,51 @@ describe('JwtAuthGuard', () => {
   });
 
   it('rechaza peticiones sin token', async () => {
-    await expect(guard.canActivate(contexto().context)).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await esperarRechazo();
   });
 
   it('rechaza esquemas distintos de Bearer', async () => {
-    const token = await jwtService.signAsync({
-      sub: 'u1',
-      unidadNegocioId: 'n1',
-    });
-    await expect(
-      guard.canActivate(contexto(`Basic ${token}`).context),
-    ).rejects.toThrow(UnauthorizedException);
+    await esperarRechazo(`Basic ${await jwtService.signAsync(PAYLOAD)}`);
   });
 
   it('rechaza tokens firmados con otro secreto', async () => {
-    const token = await new JwtService({ secret: 'otro' }).signAsync({
-      sub: 'u1',
-      unidadNegocioId: 'n1',
-    });
-    await expect(
-      guard.canActivate(contexto(`Bearer ${token}`).context),
-    ).rejects.toThrow(UnauthorizedException);
+    const token = await new JwtService({ secret: 'otro' }).signAsync(PAYLOAD);
+    await esperarRechazo(`Bearer ${token}`);
   });
 
   it('rechaza tokens expirados', async () => {
-    const token = await jwtService.signAsync(
-      { sub: 'u1', unidadNegocioId: 'n1' },
-      { expiresIn: -10 },
-    );
-    await expect(
-      guard.canActivate(contexto(`Bearer ${token}`).context),
-    ).rejects.toThrow(UnauthorizedException);
+    const token = await jwtService.signAsync(PAYLOAD, { expiresIn: -10 });
+    await esperarRechazo(`Bearer ${token}`);
   });
 
   it('rechaza tokens sin unidad de negocio', async () => {
-    const token = await jwtService.signAsync({ sub: 'u1' });
-    await expect(
-      guard.canActivate(contexto(`Bearer ${token}`).context),
-    ).rejects.toThrow(UnauthorizedException);
+    const token = await jwtService.signAsync({ sub: 'u1', rol: Rol.ADMIN });
+    await esperarRechazo(`Bearer ${token}`);
   });
 
-  it('deja el usuario y su unidad de negocio en request.user', async () => {
-    const token = await jwtService.signAsync({
+  it('rechaza tokens sin rol o con un rol desconocido', async () => {
+    const sinRol = await jwtService.signAsync({
       sub: 'u1',
       unidadNegocioId: 'n1',
     });
-    const { context, request } = contexto(`Bearer ${token}`);
+    const rolInventado = await jwtService.signAsync({
+      ...PAYLOAD,
+      rol: 'SUPERADMIN',
+    });
+    await esperarRechazo(`Bearer ${sinRol}`);
+    await esperarRechazo(`Bearer ${rolInventado}`);
+  });
+
+  it('deja usuario, unidad de negocio y rol en request.user', async () => {
+    const { context, request } = contexto(
+      `Bearer ${await jwtService.signAsync(PAYLOAD)}`,
+    );
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.user).toEqual({ usuarioId: 'u1', unidadNegocioId: 'n1' });
+    expect(request.user).toEqual({
+      usuarioId: 'u1',
+      unidadNegocioId: 'n1',
+      rol: Rol.AGENTE,
+    });
   });
 });
