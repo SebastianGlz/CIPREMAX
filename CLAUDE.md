@@ -6,6 +6,8 @@
 * **Gemini (IA):** Arquitecto de Software y planificador estratégico.
 * **Claude (IA - Tú):** Asistente de código enfocado en ejecutar el backend.
 
+**Alcance de Claude:** solo backend (NestJS). La base de datos la lleva Dev 2: no crear ni modificar `schema.prisma`, migraciones, seeds ni la configuración de Prisma, y no conectarse a la base. Tampoco frontend.
+
 ## Stack Tecnológico
 * **Framework:** NestJS (Configurado con CommonJS).
 * **Base de Datos:** PostgreSQL.
@@ -16,6 +18,15 @@
 1. **Arquitectura Multi-Tenant:** El sistema alojará 4 unidades de negocio (RE/MAX, Sastrería, Academia, Paco). Absolutamente todas las tablas/modelos principales en Prisma (Usuarios, Clientes, Propiedades, Expedientes) DEBEN incluir el campo `id_unidad_negocio`.
 2. **Seguridad JWT:** Todos los endpoints (excepto webhooks públicos) deben estar protegidos por Guards de NestJS. El `id_unidad_negocio` vivirá dentro del payload del JWT para filtrar las consultas a la base de datos automáticamente.
 3. **Estructura Estricta:** Respeta la modularidad de NestJS. Mantén los Controladores limpios (solo rutas) y delega la lógica a los Servicios.
+
+## Autenticación (`src/auth`)
+* `JwtAuthGuard` es global: toda ruta exige `Authorization: Bearer <jwt>` salvo las marcadas con `@Public()`.
+* Payload del JWT: `{ sub, unidadNegocioId }`. El guard deja `{ usuarioId, unidadNegocioId }` en `request.user`; se lee con `@UsuarioActual()`.
+* `AuthService.emitirToken()` firma el token. Falta el endpoint de login, que depende de la tabla de usuarios (Dev 2).
+* Variables: `JWT_SECRET` (obligatoria) y `JWT_EXPIRES_IN` (por defecto `1h`). Ver `.env.example`.
+
+## Tests
+* `npm test` y `npm run test:e2e`. Los scripts pasan `--experimental-vm-modules` a Node porque los paquetes de NestJS 12 son ESM; `npx jest` directo falla.
 
 ## Estado Actual (Sprint 1)
 Estamos levantando el proyecto base. Nuestras tareas inmediatas son:
