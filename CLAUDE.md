@@ -25,6 +25,16 @@
 * `AuthService.emitirToken()` firma el token. Falta el endpoint de login, que depende de la tabla de usuarios (Dev 2).
 * Variables: `JWT_SECRET` (obligatoria) y `JWT_EXPIRES_IN` (por defecto `1h`). Ver `.env.example`.
 
+## Base HTTP
+* Toda la API cuelga de `/api`. La configuración HTTP (prefijo, helmet, CORS, Swagger) vive en `configurarApp()` (`src/app.setup.ts`), que usan `main.ts` y los e2e.
+* `ValidationPipe` global con `whitelist` y `forbidNonWhitelisted`: todo body debe tener un DTO con `class-validator`; los campos no declarados se rechazan con 400.
+* Errores con una sola forma (`HttpExceptionFilter`): `{ statusCode, error, messages: string[], path, timestamp }`. En los servicios lanza excepciones de NestJS (`NotFoundException`, etc.).
+* Las variables de entorno se validan al arrancar (`src/config/env.validation.ts`); una variable nueva se declara ahí y en `.env.example`.
+* CORS solo se enciende para los orígenes de `CORS_ORIGIN`.
+* Swagger en `/api/docs` (JSON en `/api/docs-json`), apagado con `NODE_ENV=production`. El plugin de `@nestjs/swagger` en `nest-cli.json` documenta los DTO sin decoradores extra.
+* `GET /api/health` es público.
+* CI (`.github/workflows/ci.yml`): lint, build, tests unitarios y e2e en cada PR y en cada push a `master`.
+
 ## Tests
 * `npm test` y `npm run test:e2e`. Los scripts pasan `--experimental-vm-modules` a Node porque los paquetes de NestJS 12 son ESM; `npx jest` directo falla.
 
