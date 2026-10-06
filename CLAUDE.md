@@ -34,7 +34,7 @@
 * Errores con una sola forma (`HttpExceptionFilter`): `{ statusCode, error, messages: string[], path, timestamp }`. En los servicios lanza excepciones de NestJS (`NotFoundException`, etc.).
 * Las variables de entorno se validan al arrancar (`src/config/env.validation.ts`); una variable nueva se declara ahí y en `.env.example`.
 * CORS solo se enciende para los orígenes de `CORS_ORIGIN`.
-* Swagger en `/api/docs` (JSON en `/api/docs-json`), apagado con `NODE_ENV=production`. El plugin de `@nestjs/swagger` en `nest-cli.json` documenta los DTO sin decoradores extra.
+* Swagger en `/api/docs` (JSON en `/api/docs-json`), apagado con `NODE_ENV=production`. `NODE_ENV` es obligatoria (`development`, `production` o `test`): sin ella la app no arranca, para no publicar Swagger por descuido. El plugin de `@nestjs/swagger` en `nest-cli.json` documenta los DTO sin decoradores extra.
 * `GET /api/health` es público.
 * CI (`.github/workflows/ci.yml`): lint, build, tests unitarios y e2e en cada PR y en cada push a `master`.
 

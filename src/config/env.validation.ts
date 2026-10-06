@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -11,7 +12,16 @@ import {
   validateSync,
 } from 'class-validator';
 
+export const ENTORNOS = ['development', 'production', 'test'] as const;
+
 class VariablesDeEntorno {
+  /**
+   * Obligatoria: Swagger se publica en todo entorno que no sea `production`,
+   * así que un despliegue sin ella (o con un valor mal escrito) no debe arrancar.
+   */
+  @IsIn(ENTORNOS)
+  NODE_ENV: (typeof ENTORNOS)[number];
+
   @IsOptional()
   @IsInt()
   @Min(1)
