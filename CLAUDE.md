@@ -38,6 +38,10 @@
 * `GET /api/health` es público.
 * CI (`.github/workflows/ci.yml`): lint, build, tests unitarios y e2e en cada PR y en cada push a `master`.
 
+## Versión de Node
+* Node 24.8 o superior (`engines` en `package.json`, `.nvmrc` con `24`; el CI lee el `.nvmrc`). Con Node 22 o con un 24 anterior a 24.8, los tests fallan con "Must use import to load ES Module".
+* Al tocar dependencias, comprueba que el lockfile conserve `@emnapi/core` y `@emnapi/runtime`. npm 11.6 las borra y el `npm ci` del CI lo rechaza. Si desaparecen, regenera el lockfile con `npx npm@11.21 install`.
+
 ## Tests
 * `npm test` y `npm run test:e2e`. Los scripts pasan `--experimental-vm-modules` a Node porque los paquetes de NestJS 12 son ESM; `npx jest` directo falla.
 
